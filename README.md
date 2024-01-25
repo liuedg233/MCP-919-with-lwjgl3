@@ -1,4 +1,4 @@
-# MCP-919-with-optfine-and-lwjgl3 Compatibility Layer
+# MCP-919-with-optfine-and-lwjgl3
 兼容层代码来自：https://github.com/Verschwiegener/MCLWJGL3  
 已知问题：  
 1.不能全屏  
