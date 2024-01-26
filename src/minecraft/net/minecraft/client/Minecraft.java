@@ -664,22 +664,36 @@ public class Minecraft implements IThreadListener, IPlayerUsage
         }
     }
 
-    private void setWindowIcon() {
-        try {
-            BufferedImage originalImage = ImageIO.read(new File("icons/icon_16x16.png"));
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(originalImage, "png", baos);
-            baos.flush();
-            byte[] imageInByte = baos.toByteArray();
-            ByteBuffer buF = ByteBuffer.wrap(imageInByte);
-            GLFWImage.Buffer b = new GLFWImage.Buffer(buF);
-            glfwSetWindowIcon(getWindow(), b);
-        } catch (IOException io) {
-            logger.error("Could not load window icon!");
-            logger.error(io.toString());
+    private void setWindowIcon()
+    {
+        Util.EnumOS util$enumos = Util.getOSType();
+
+        if (util$enumos != Util.EnumOS.OSX)
+        {
+            InputStream inputstream = null;
+            InputStream inputstream1 = null;
+
+            try
+            {
+                inputstream = this.mcDefaultResourcePack.getInputStreamAssets(new ResourceLocation("icons/icon_16x16.png"));
+                inputstream1 = this.mcDefaultResourcePack.getInputStreamAssets(new ResourceLocation("icons/icon_32x32.png"));
+
+                if (inputstream != null && inputstream1 != null)
+                {
+                    Display.setIcon(new ByteBuffer[] {this.readImageToBuffer(inputstream), this.readImageToBuffer(inputstream1)});
+                }
+            }
+            catch (IOException ioexception)
+            {
+                logger.error((String)"Couldn\'t set icon", (Throwable)ioexception);
+            }
+            finally
+            {
+                IOUtils.closeQuietly(inputstream);
+                IOUtils.closeQuietly(inputstream1);
+            }
         }
     }
-
     private static boolean isJvm64bit()
     {
         String[] astring = new String[] {"sun.arch.data.model", "com.ibm.vm.bitmode", "os.arch"};

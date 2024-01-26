@@ -6,6 +6,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -27,6 +28,8 @@ public class Display {
     private static boolean resized;
     private static boolean focused;
     private static boolean vsync;
+    private static GLFWImage.Buffer cached_icons;
+    private static ByteBuffer[] cached_icon_data;
 
 
     static{
@@ -86,32 +89,28 @@ public class Display {
         glfwSetWindowTitle(window, titleIn);
     }
 
-    public static void setIcon(ByteBuffer[] byteBuffers) {//This read correctly byte buffers
-        GLFWImage.Buffer imagebf = GLFWImage.malloc(2);
-        for (int b = 0; b < byteBuffers.length; b++) {
-            System.out.println("loaded icon index -> " + b);
-
-            ByteBuffer image = byteBuffers[b];
-            System.out.println("Setting icon " + image);
-            int width, height;
-
-            if (b == 0) {
-                width = 16;
-                height = 16;
-            } else {
-                width = 32;
-                height = 32;
+    public static void setIcon(ByteBuffer[] icons) {
+        if (cached_icons != null) {
+            cached_icons.free();
+            for (ByteBuffer buffer : cached_icon_data) {
+                MemoryUtil.memFree(buffer);
             }
-
-            System.out.println("Width: " + width + ", Height: " + height);
-
-            GLFWImage imagegl = GLFWImage.malloc();
-            imagegl.set(width, height, image);
-            imagebf.put(imagegl);
         }
-
-        glfwSetWindowIcon(window, imagebf);
-        imagebf.free();
+        cached_icons = GLFWImage.calloc(icons.length);
+        cached_icon_data = new ByteBuffer[icons.length];
+        for (int i = 0; i < icons.length; ++i) {
+            ByteBuffer iconBuffer = icons[i];
+            GLFWImage icon = (GLFWImage)((Object)cached_icons.get(i));
+            Display.cached_icon_data[i] = MemoryUtil.memAlloc(iconBuffer.limit());
+            byte[] tmp = new byte[iconBuffer.limit()];
+            iconBuffer.get(tmp);
+            iconBuffer.position(0);
+            cached_icon_data[i].put(tmp);
+            cached_icon_data[i].position(0);
+            int size = (int)Math.sqrt(cached_icon_data[i].limit() >> 2);
+            icon.set(size, size, cached_icon_data[i]);
+        }
+        GLFW.glfwSetWindowIcon(window, cached_icons);
     }
 
     public static void setVSyncEnabled(boolean vsyncIn) {
